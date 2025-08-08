@@ -1,19 +1,26 @@
-import { ref } from 'vue'
+import { ref, watchEffect, toValue } from 'vue'
 
 export function useFetch<T>(url: string) {
   const data = ref<T | null>(null)
   const error = ref<Error | null>(null)
+  const isLoading = ref(true)
 
-  const fetchData = async () => {
+  watchEffect(async () => {
+    data.value = null
+    error.value = null
+    isLoading.value = true
+
+    const urlValue = toValue(url)
+
     try {
-      const res = await fetch(url)
-      data.value = (await res.json()) as T
-    } catch (err) {
-      error.value = err as Error
+      const res = await fetch(urlValue)
+      data.value = await res.json()
+    } catch (e) {
+      error.value = e as Error
+    } finally {
+      isLoading.value = false
     }
-  }
+  })
 
-  fetchData()
-
-  return { data, error, fetchData }
+  return { data, error, isLoading }
 }
